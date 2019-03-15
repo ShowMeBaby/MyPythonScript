@@ -1,30 +1,20 @@
 #!/usr/bin/python
-# -*- coding: UTF-8 -*-
+# -*- coding: utf-8 -*-
 from tkinter import *                       # 导入 tkinter 库
 from PIL import Image, ImageTk              # 图片处理模块
 import tkinter.filedialog                   # 用以获取图片路径
 import tkinter.messagebox as msg            # 用来进行'关于'弹窗
 import funUtil                              # 人脸识别函数模块
+import baiduApi                             # 百度API模块
 import math                                 # 数学模块
-import urllib.request                       # 安全验证相关正式交付后应删除
-import json                                 # 安全验证相关正式交付后应删除
-import os                                   # 安全验证相关正式交付后应删除
 
-try:
-    isRun = json.loads(urllib.request.urlopen("http://21120903.xyz/pyhondlib_is_start.php").read().decode('utf-8')).get("javaNo.1")
-    if isRun != True:
-        print("验证失败,请联系作者")
-        os._exit(0)
-except :
-    print("验证失败,请联系作者")
-    os._exit(0)
 
 class Window(Frame):
     def __init__(self, master=None):
         Frame.__init__(self, master)
         self.master = master
         # 设置窗口大小及居中居中
-        self.center_window(800, 600)
+        self.center_window(800, 800)
         self.init_window()
 
     def init_window(self):
@@ -50,6 +40,10 @@ class Window(Frame):
         self.master.tipsLabel = Label(self.master, text="请点击下方按钮以开始检测", font=(
             "", 16), width=800, height=2, wraplength=800, bg="#fafafa")
         self.master.tipsLabel.pack(fill=X, side='bottom')
+        # 百度API提示框控件
+        self.master.baiduTipsLabel = Label(self.master, text="此处为百度API检测结果", font=(
+            "", 16), width=800, height=2, wraplength=800, bg="#fafafa")
+        self.master.baiduTipsLabel.pack(fill=X, side='bottom')
         # 实例化一个Menu对象，这个在主窗体添加一个菜单
         menu = Menu(self.master)
         self.master.config(menu=menu)
@@ -69,9 +63,9 @@ class Window(Frame):
         width = self.winfo_width()
         height = self.winfo_height()
         # 兼容性调整,在软件启动后直接执行第一次showImg时,图片大小不会跟随最大化,目前原因未知,暂时手动调整回正确数值,以进行修正
-        if height == 1:
+        if height == 148:
             height = 485
-        elif height == 423:
+        elif height == 375:
             height = 912
         # 展示图片
         image = self.resize(width, height, image)
@@ -89,6 +83,16 @@ class Window(Frame):
         else:
             self.master.tipsLabel.config(text=txt, wraplength=width, height=2)
 
+    def showBaiduApiTxt(self, txt):
+        width = self.master.winfo_width()
+        # 在提示框中显示提示文字
+        if len(txt) > (width/27):
+            self.master.baiduTipsLabel.config(
+                text=txt, wraplength=width, height=math.floor(len(txt)/(width/27)))
+        else:
+            self.master.baiduTipsLabel.config(
+                text=txt, wraplength=width, height=2)
+
     def resize(self, w_box, h_box, pil_image):
         # 参数是：要适应的窗口宽、高、Image.open后的图片
         w, h = pil_image.size  # 获取图像的原始大小
@@ -102,10 +106,17 @@ class Window(Frame):
     def inputFile(self):
         # 选择图片文件,选择多个文件的函数为askopenfilenames(),如有需要可直接更改
         self.showTxt("正在检测")
+        self.showBaiduApiTxt("正在检测")
         filenames = tkinter.filedialog.askopenfilename()
         if len(filenames) != 0:
             img, lenFaces, face_euler_angle_arr = funUtil.get_face(filenames)
             print("\n结果集为:\n {}".format(face_euler_angle_arr))
+            baidu_lenFaces, baidu_face_euler_angle_arr = baiduApi.faceDetec(
+                filenames)
+            print("\n百度API结果集为:\n {}".format(baidu_face_euler_angle_arr))
+
+            self.showBaiduApiTxt("百度检出人脸数:"+str(baidu_lenFaces)+"     " +
+                                 str(baidu_face_euler_angle_arr))
             self.showTxt("人脸数:"+str(lenFaces)+"     " +
                          str(face_euler_angle_arr))
             self.showImg(img)

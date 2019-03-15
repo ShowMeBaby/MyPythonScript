@@ -1,30 +1,18 @@
 #!/usr/bin/python
-# -*- coding: UTF-8 -*-
+# -*- coding: utf-8 -*-
 from PIL import Image, ImageDraw, ImageFont  # 中文处理模块 Pillow
 import dlib                                  # 人脸识别模块 Dlib
 import numpy as np                           # 数据处理模块 numpy
 import cv2                                   # 图像处理模块 OpenCv
 import time                                  # 时间模块
 import math                                  # 数学模块
-import urllib.request                       # 安全验证相关正式交付后应删除
-import json                                 # 安全验证相关正式交付后应删除
-import os                                   # 安全验证相关正式交付后应删除
 
-try:
-    isRun = json.loads(urllib.request.urlopen("http://21120903.xyz/pyhondlib_is_start.php").read().decode('utf-8')).get("javaNo.1")
-    if isRun != True:
-        print("验证失败,请联系作者")
-        os._exit(0)
-except :
-    print("验证失败,请联系作者")
-    os._exit(0)
 
 def get_image_points_from_landmark_shape(landmark_shape):
     # 从dlib的检测结果抽取姿态估计需要的点坐标
     if landmark_shape.num_parts != 68:
         print("ERROR:landmark_shape.num_parts-{}".format(landmark_shape.num_parts))
         return None
-
     # 从68点特征点中取出我们需要的部分
     image_points = np.matrix([
         (landmark_shape.part(30).x, landmark_shape.part(30).y),     # 鼻尖
@@ -105,6 +93,10 @@ def get_euler_angle(rotation_vector):
     # 转化出的欧拉角单位是弧度，需要除以Pi乘以180得到度的单位值
     # 单位转换：将弧度转换为度
     Y = int((pitch/math.pi)*180)
+    if Y > 0:
+        Y = Y - 180
+    else:
+        Y = Y + 180
     X = int((yaw/math.pi)*180)
     Z = int((roll/math.pi)*180)
     return 0, Y, X, Z
@@ -136,9 +128,14 @@ def get_face(imgpath):
 
     # Dlib 检测器和预测器
     detector = dlib.get_frontal_face_detector()
-    predictor = dlib.shape_predictor('./model/shape_predictor_68_face_landmarks.dat')
+    predictor = dlib.shape_predictor(
+        './model/shape_predictor_68_face_landmarks.dat')
     # 读取图像文件
-    img_rd = cv2. imdecode(np.fromfile(imgpath, dtype=np.uint8), -1)
+    # img_rd = cv2.imdecode(np.fromfile(imgpath, dtype=np.uint8), -1)
+    # 读取图片文件,
+    # 如果报错提示:RuntimeError: Unsupported image type,must be 8bit gray or RGB image.
+    # 可以注释本函数,启用上方的cv2.imdecode函数
+    img_rd = cv2.imread(imgpath)
     img_gray = cv2.cvtColor(img_rd, cv2.COLOR_RGB2GRAY)
 
     # 人脸数
@@ -147,14 +144,13 @@ def get_face(imgpath):
     # 设置cv2字体
     font = cv2.FONT_HERSHEY_SIMPLEX
     # 人脸坐标集合
-    face_euler_angle_arr=[]
+    face_euler_angle_arr = []
 
     # 标记特征点
     if len(faces) != 0:
-
         # 检测到人脸
         for i in range(len(faces)):
-            print("\n\n正在检测第",i+1,"张人脸")
+            print("\n\n正在检测第", i+1, "张人脸")
             # 取特征点坐标
             # 获取全部68个特征点,后面的计算主要依赖于6点坐标,故这个获取68点坐标只做吉祥物使用,以便在需要修改重构时有个较完善的起点
             # landmarks = np.matrix([[p.x, p.y] for p in predictor(img_rd, faces[i]).parts()])
@@ -171,7 +167,8 @@ def get_face(imgpath):
 
             # 从旋转向量转换为欧拉角
             ret, pitch, yaw, roll = get_euler_angle(rotation_vector)
-            euler_angle_str = 'X:{}, Y:{}, Z:{}'.format(roll,pitch,yaw)
+            euler_angle_str = 'roll:{}, pitch:{}, yaw:{}'.format(
+                roll, pitch, yaw)
             ## euler_angle_str = '上下翻转角:{},平面内旋转角::{}, 左右翻转角:{}'.format(pitch, yaw, roll)
             face_euler_angle_arr.append(euler_angle_str)
             # cv2.putText()参数:cv2图片,文本内容,打印坐标,字体,字体大小,字体颜色,线宽,线型
@@ -204,13 +201,12 @@ def get_face(imgpath):
                             0.5, (0, 0, 255), 2, cv2.LINE_AA)
         # img_rd = putText_chinese(img_rd, "人脸数: " + str(len(faces)), (20, 40), 20, (255, 0, 0))
     else:
-
         # 没有检测到人脸
         # img_rd = putText_chinese(img_rd, "没有检测到人脸或人脸显示不完整", (20, 40), 20, (255, 0, 0))
         face_euler_angle_arr.append("没有检测到人脸或人脸显示不完整")
     print("\n检测用时:{} 秒".format(round(time.time() - start_time, 3)))
     # cv2图片通道顺序为BGR,故需要翻转为RGB
-    return Image.fromarray(img_rd[..., ::-1]),len(faces),face_euler_angle_arr
+    return Image.fromarray(img_rd[..., ::-1]), len(faces), face_euler_angle_arr
 
 
 if __name__ == '__main__':
