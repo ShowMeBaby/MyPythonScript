@@ -131,11 +131,11 @@ def get_face(imgpath):
     predictor = dlib.shape_predictor(
         './model/shape_predictor_68_face_landmarks.dat')
     # 读取图像文件
-    # img_rd = cv2.imdecode(np.fromfile(imgpath, dtype=np.uint8), -1)
+    img_rd = cv2.imdecode(np.fromfile(imgpath, dtype=np.uint8), -1)
     # 读取图片文件,
     # 如果报错提示:RuntimeError: Unsupported image type,must be 8bit gray or RGB image.
     # 可以注释本函数,启用上方的cv2.imdecode函数
-    img_rd = cv2.imread(imgpath)
+    # img_rd = cv2.imread(imgpath)
     img_gray = cv2.cvtColor(img_rd, cv2.COLOR_RGB2GRAY)
 
     # 人脸数
