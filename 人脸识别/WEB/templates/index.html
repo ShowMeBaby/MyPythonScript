@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+		<meta charset="utf-8" />
+		<title>人脸姿态识别</title>
+		<script src="https://cdn.bootcss.com/vue/2.5.17-beta.0/vue.min.js"></script>
+		<script src="https://cdn.bootcss.com/vue-resource/1.5.1/vue-resource.min.js"></script>
+		<script src="http://g.tbcdn.cn/mtb/lib-flexible/0.3.2/??flexible_css.js,flexible.js"></script>
+		<link rel="stylesheet/less" type="text/less" href="/static/styles.less" />
+		<script src="http://cdnjs.cloudflare.com/ajax/libs/less.js/3.8.1/less.min.js"></script>
+	</head>
+	<body>
+		<div id="app">
+			<div class="loading" v-if="isLoading">正在识别</div>
+			<div class="top">
+				<div class="shadow">
+					<div class="banner">
+						<div class="img">
+							<img :src="data.img_url">
+						</div>
+						<div class="banner_info">
+							<div class="info">
+								<div class="li">
+									<span class="value" v-text="'我的结果 人脸数:'+data.my.face"></span>
+								</div>
+								<div class="lis" v-for="value in data.my.list">
+									<div class="li">
+										<span class="name">roll:</span>
+										<span class="value" v-text="value.roll"></span>
+									</div>
+									<div class="li">
+										<span class="name">pitch:</span>
+										<span class="value" v-text="value.pitch"></span>
+									</div>
+									<div class="li">
+										<span class="name">yaw:</span>
+										<span class="value" v-text="value.yaw"></span>
+									</div>
+								</div>
+							</div>
+							<div class="info">
+								<div class="li">
+									<span class="value" v-text="'百度结果 人脸数:'+data.baidu.face"></span>
+								</div>
+								<div class="lis" v-for="value in data.baidu.list">
+									<div class="li">
+										<span class="name">roll:</span>
+										<span class="value" v-text="value.roll"></span>
+									</div>
+									<div class="li">
+										<span class="name">pitch:</span>
+										<span class="value" v-text="value.pitch"></span>
+									</div>
+									<div class="li">
+										<span class="name">yaw:</span>
+										<span class="value" v-text="value.yaw"></span>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="footer">
+				<div class="file">
+					<div class="file-box">
+						<input type="file" class="file-btn" name="" id="" value="" @change="onChange" />
+						<span v-text="this.imgFile?this.imgFile.name:'选择文件'"></span>
+					</div>
+					<span class="submit" @click="submit">识别人脸</span>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript">
+		Vue.http.options.emulateJSON = true;
+		var app = new Vue({
+			el: '#app',
+			data: {
+				isLoading: false,
+				imgFile: null,
+				data: {
+					img_url: '/static/background.jpg',
+					baidu: {
+						face: 0,
+						list: [{}],
+					},
+					my: {
+						face: 0,
+						list: [{}]
+					}
+				},
+			},
+			methods: {
+				submit() {
+					var formData = new FormData();
+					formData.append('file', this.imgFile);
+					this.isLoading = true;
+					this.$http.post('/submits', formData, {
+						headers: {
+							'Content-Type': 'multipart/form-data'
+						}
+					}).then(res => {
+						this.data = res.data;
+						this.isLoading = false;
+					}, err => {
+						this.isLoading = false;
+						console.log('请求失败处理');
+					});
+				},
+				onChange(event) {
+					this.imgFile = event.target.files[0];
+					this.data = {
+						img_url: this.getObjectURL(event.target.files[0]),
+						baidu: {
+							face: 0,
+							list: [{}],
+						},
+						my: {
+							face: 0,
+							list: [{}]
+						}
+					}
+				},
+				getObjectURL(file) {
+					var url = null;
+					if (window.createObjectURL != undefined) { // basic
+						url = window.createObjectURL(file);
+					} else if (window.URL != undefined) { // mozilla(firefox)
+						url = window.URL.createObjectURL(file);
+					} else if (window.webkitURL != undefined) { // webkit or chrome
+						url = window.webkitURL.createObjectURL(file);
+					}
+					return url;
+				}
+			}
+		})
+	</script>
+</html>
