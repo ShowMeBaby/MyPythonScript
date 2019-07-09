@@ -6,6 +6,8 @@ from flask import render_template
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
+# 启用pypugjs
+app.jinja_env.add_extension('pypugjs.ext.jinja.PyPugJSExtension')
 # 禁止ASCII以解决中文输出问题
 app.config['JSON_AS_ASCII'] = False
 # 为app指定数据库的配置信息
@@ -97,7 +99,7 @@ def after_request(response):
 # 主页
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    return render_template('index.html', title='优雅的主页'), 200, {'Content-Type': 'text/html'}
+    return render_template('index.pug', title='优雅的主页')
 
 
 # 测试查询数据库
@@ -138,7 +140,7 @@ def login():
     else:
         username = request.form.get("username")
         print("POST请求参数:", request.form.get("username"))
-    return render_template('index.html', title='你输出的参数为:{}'.format(username))
+    return render_template('index.pug', title='你输出的参数为:{}'.format(username))
 
 
 # 可以根据参数类型进行重载

@@ -1,6 +1,17 @@
 # -*- coding:utf-8 -*-
 from bottle import template, Bottle, error
+from threading import Timer
+import datetime
+
 root = Bottle()
+
+
+def timerTask():
+    print('TimeNow:%s' %
+          (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+    t = Timer(2, timerTask)
+    t.start()
+    return '定时任务已启动'
 
 
 @root.error(404)
@@ -18,4 +29,5 @@ def hello(name):
     return template('<h1>Hello {{name}}!</h1>', name=name)
 
 
-root.run(host='localhost', port=8080)
+if __name__ == '__main__':
+    root.run(host='localhost', port=8080, reloader=True)

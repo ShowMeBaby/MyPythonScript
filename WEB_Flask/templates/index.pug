@@ -1,0 +1,12 @@
+doctype 5
+include world
+
+html
+	head: title 这里是页面标题
+	body
+		if name
+			h1(class="red") 你好 #{ name|capitalize }
+			span.description #{name|capitalize} 是个好名字!
+		else
+			h1 你好
+			+world
